@@ -1,0 +1,23 @@
+@font-face {
+  font-family: 'Pretendard';
+  src: url('assets/PretendardVariable.woff2') format('woff2'); /* WOFF2 파일 경로 지정 */
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  font-family: 'Pretendard';
+}
+
+table {
+  border-radius: 15px;
+}
+
+/* 모든 버튼의 기본 스타일 변경 */
+.fc .fc-button-primary {
+    background-color: #4F82A7;
+    border-color: #4F82A7;
+    color: white;
+    border-radius: 50%;
+}
