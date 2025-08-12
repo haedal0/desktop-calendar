@@ -1,5 +1,6 @@
 import { readTextFile, BaseDirectory, create } from '@tauri-apps/plugin-fs';
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { invoke } from '@tauri-apps/api/core';
 
 interface CalendarEvent {
     [x: string]: any;
@@ -106,6 +107,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return
         }
         getCurrentWindow().startDragging();
+    })
+
+    document.getElementById('calendar')?.addEventListener('pointerleave', () => {
+        invoke('set_window_below_icons')
     })
 
     function showModal() {

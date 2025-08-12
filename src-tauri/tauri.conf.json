@@ -20,6 +20,8 @@
         "fullscreen": false,
         "skipTaskbar": true,
         "transparent": true,
+        "shadow": false,
+        "focus": false,
         "width": 800,
         "height": 600
       }

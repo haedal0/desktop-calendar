@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf};
 use tauri_plugin_autostart::ManagerExt;
 use serde::{Deserialize, Serialize};
-use tauri::{Manager, PhysicalPosition, PhysicalSize};
+use tauri::{Manager, PhysicalPosition, PhysicalSize, WebviewWindow};
 use tauri_plugin_autostart::MacosLauncher;
+use windows::Win32::{Foundation::{HWND, LPARAM, LRESULT, WPARAM}, UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPtrW, GWLP_WNDPROC}};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,6 +14,10 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![
+            set_window_below_icons,
+            set_window_above_icons
+        ])
         .setup(|app| {
             let app_data_dir = app.app_handle().path().app_data_dir().unwrap();
             std::fs::create_dir_all(app_data_dir).expect("Failed to create app data directory");
@@ -24,7 +29,19 @@ pub fn run() {
             {
                 let webview_window = app.get_webview_window("main");
                 let window = webview_window.unwrap();
-                let _ = set_as_wallpaper_layer(&window);
+                set_window_below_icons(window.clone());
+                let window_for_event = window.clone();
+                window.on_window_event(move |event| {
+                    use tauri::WindowEvent;
+
+                    match event {
+                        WindowEvent::Focused(false) => {
+                            let _ = set_window_below_icons(window_for_event.clone());
+                        }
+                        _ => {}
+                    }
+                });
+
             }
 
             let app_data_dir = app.app_handle().path().app_data_dir().unwrap();
@@ -96,81 +113,47 @@ fn save_window_state(position: &PhysicalPosition<i32>, size: &PhysicalSize<u32>,
     }
 }
 
-#[cfg(target_os = "windows")]
-fn set_as_wallpaper_layer(window: &tauri::WebviewWindow) -> windows::core::Result<()> {
-    use windows::core::w;
-    use windows::core::PCWSTR;
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{
-        FindWindowExW, FindWindowW, SendMessageTimeoutW, SetParent, SMTO_NORMAL,
+#[cfg(windows)]
+mod winapi {
+    use windows::{
+        Win32::Foundation::HWND,
+        Win32::UI::WindowsAndMessaging::*,
     };
 
-    unsafe {
-        use windows::Win32::{
-            Foundation::{LPARAM, WPARAM},
-            UI::WindowsAndMessaging::{
-                GetWindowLongW, SetLayeredWindowAttributes, SetWindowLongW, SetWindowPos,
-                GWL_EXSTYLE, GWL_STYLE, HWND_TOPMOST, LWA_ALPHA, SWP_NOMOVE, SWP_NOSIZE,
-                WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT, WS_POPUP,
-            },
-        };
-        let progman = FindWindowW(PCWSTR(w!("Progman").as_ptr()), PCWSTR::null())?;
-        let mut dummy = 0usize;
-        let _ = SendMessageTimeoutW(
-            progman,
-            0x052C,
-            WPARAM(0),
-            LPARAM(0),
-            SMTO_NORMAL,
-            1000,
-            Some(&mut dummy as *mut usize),
+    pub unsafe fn set_window_pos(hwnd: HWND, top: bool) {
+        SetWindowPos(
+            hwnd,
+            if top { Some(HWND_TOP) } else { Some(HWND_BOTTOM) },
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
         );
-        let workerw = FindWindowExW(
-            Some(progman),
-            None,
-            PCWSTR(w!("WorkerW").as_ptr()),
-            PCWSTR::null(),
-        )?;
+    }
 
-        let _raw = window
-            .hwnd()
-            .or_else(|_| Err(windows::core::Error::from_win32()))?;
-        let _raw_hwnd = window.hwnd().unwrap().0;
+}
+
+#[tauri::command]
+fn set_window_below_icons(window: WebviewWindow) -> Result<(), String> {
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::Foundation::HWND;
 
         let hwnd = HWND(window.hwnd().unwrap().0);
-
-        let _ = SetParent(hwnd, Some(workerw));
-
-        let exstyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
-
-        let new_exstyle = (exstyle | WS_EX_LAYERED.0 as i32)
-            & !(WS_EX_TRANSPARENT.0 as i32 | WS_EX_TOOLWINDOW.0 as i32 | 0x08000000/* WS_EX_NOACTIVATE */);
-        SetWindowLongW(hwnd, GWL_EXSTYLE, new_exstyle);
-
-        let _ = SetLayeredWindowAttributes(
-            hwnd,
-            windows::Win32::Foundation::COLORREF(0),
-            255,
-            LWA_ALPHA,
-        );
-
-        let style = GetWindowLongW(hwnd, GWL_STYLE);
-        if (style & WS_POPUP.0 as i32) == 0 {
-            SetWindowLongW(hwnd, GWL_STYLE, style | WS_POPUP.0 as i32);
-        }
-
-        let _ = SetWindowPos(
-            hwnd,
-            Some(HWND_TOPMOST),
-            0,
-            0,
-            0,
-            0,
-            SWP_NOMOVE | SWP_NOSIZE,
-        );
-
-        let _ = SetParent(hwnd, Some(progman));
-
-        Ok(())
+        winapi::set_window_pos(hwnd, false);
     }
+    Ok(())
+}
+
+#[tauri::command]
+fn set_window_above_icons(window: WebviewWindow) -> Result<(), String> {
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::Foundation::HWND;
+
+        let hwnd = HWND(window.hwnd().unwrap().0);
+        winapi::set_window_pos(hwnd, true);
+    }
+    Ok(())
 }
