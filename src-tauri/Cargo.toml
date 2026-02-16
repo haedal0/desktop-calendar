@@ -1,6 +1,6 @@
 [package]
 name = "desktop-calendar"
-version = "26.0"
+version = "26.0.0"
 description = "A Desktop Calendar"
 authors = ["haedal"]
 edition = "2021"
