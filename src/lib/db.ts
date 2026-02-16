@@ -21,6 +21,14 @@ export interface ThemeConfig {
   "--blur": string;
 }
 
+export interface WindowState {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  monitor_name: string | null;
+}
+
 export interface CustomTheme {
   id?: number;
   name: string;
@@ -54,6 +62,17 @@ async function initTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       config TEXT NOT NULL
+    );
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS window_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      x INTEGER NOT NULL,
+      y INTEGER NOT NULL,
+      width INTEGER NOT NULL,
+      height INTEGER NOT NULL,
+      monitor_name TEXT
     );
   `);
 }
@@ -144,4 +163,21 @@ export async function updateTheme(theme: CustomTheme): Promise<void> {
 export async function deleteTheme(id: number): Promise<void> {
   const db = await getDb();
   await db.execute("DELETE FROM themes WHERE id = $1", [id]);
+}
+
+// Window State Operations
+export async function getWindowState(): Promise<WindowState | null> {
+  const db = await getDb();
+  const rows = await db.select<WindowState[]>(
+    "SELECT x, y, width, height, monitor_name FROM window_state WHERE id = 1",
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function saveWindowState(state: WindowState): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    "INSERT OR REPLACE INTO window_state (id, x, y, width, height, monitor_name) VALUES (1, $1, $2, $3, $4, $5)",
+    [state.x, state.y, state.width, state.height, state.monitor_name],
+  );
 }
