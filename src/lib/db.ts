@@ -17,6 +17,8 @@ export interface ThemeConfig {
   "--day-title-color": string;
   "--week-title-color": string;
   "--month-change-color": string;
+  "--event-background-color": string;
+  "--event-text-color": string;
   "--blur-background-color": string;
   "--blur": string;
 }

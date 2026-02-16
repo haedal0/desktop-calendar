@@ -24,6 +24,8 @@
         "--day-title-color": "#000000",
         "--week-title-color": "#000000",
         "--month-change-color": "#000000",
+        "--event-background-color": "rgba(245, 69, 66, 0.2)",
+        "--event-text-color": "#000000",
         "--blur-background-color": "rgba(255, 255, 255, 0.1)",
         "--blur": "blur(5px)",
     });
@@ -610,7 +612,8 @@
     }
     .event {
         font-size: clamp(0.5rem, 1.5vw, 3rem);
-        background-color: rgba(245, 69, 66, 0.2);
+        background-color: var(--event-background-color);
+        color: var(--event-text-color);
         border-radius: 3px / 5px;
         padding: 2px;
     }

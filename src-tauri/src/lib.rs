@@ -37,6 +37,7 @@ fn update_window_with_ratio(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
         .manage(AppState {
             aspect_ratio: Mutex::new(880.0 / 1000.0),
         })
@@ -98,6 +99,7 @@ pub fn run() {
                 println!("menu item {:?} not handled", event.id);
             }
         })
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
         .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_desktop_underlay::init())
         .plugin(tauri_plugin_opener::init())

@@ -18,6 +18,8 @@
         "--day-title-color": "#000000",
         "--week-title-color": "#000000",
         "--month-change-color": "#000000",
+        "--event-background-color": "rgba(245, 69, 66, 0.2)",
+        "--event-text-color": "#000000",
         "--blur-background-color": "rgba(255, 255, 255, 0.1)",
         "--blur": "blur(5px)",
     };
@@ -84,6 +86,8 @@
         "--day-title-color": "날짜 제목 색상",
         "--week-title-color": "요일 제목 색상",
         "--month-change-color": "달 변경 버튼 색상",
+        "--event-background-color": "일정 배경 색상 (RGBA)",
+        "--event-text-color": "일정 제목 색상",
         "--blur-background-color": "블러 배경 색상 (RGBA)",
         "--blur": "블러 효과 (CSS)",
     };
@@ -110,7 +114,7 @@
                         }
                         placeholder="e.g. blur(5px)"
                     />
-                {:else if key === "--blur-background-color"}
+                {:else if key === "--blur-background-color" || key === "--event-background-color"}
                     <input
                         type="text"
                         id={key}
