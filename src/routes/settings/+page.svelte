@@ -6,42 +6,28 @@
         getThemes,
         addTheme,
         updateTheme,
+        DEFAULT_THEME_CONFIG,
         type ThemeConfig,
     } from "$lib/db";
 
-    const defaultSettings = {
-        "--other-month-day-title-color": "#ccc",
-        "--day-border-color": "#ebebeb",
-        "--other-month-day-background-color": "#ffffff",
-        "--month-color": "#000000",
-        "--year-color": "#000000",
-        "--day-title-color": "#000000",
-        "--week-title-color": "#000000",
-        "--month-change-color": "#000000",
-        "--event-background-color": "rgba(245, 69, 66, 0.2)",
-        "--event-text-color": "#000000",
-        "--blur-background-color": "rgba(255, 255, 255, 0.1)",
-        "--blur": "blur(5px)",
-    };
-
-    let themeSettings = $state({ ...defaultSettings });
+    let themeSettings = $state({ ...DEFAULT_THEME_CONFIG });
     let themeId: number | undefined = $state(undefined);
+    let isInitialized = $state(false);
 
     async function initSettings() {
         try {
             const themes = await getThemes();
-            console.log("Loaded themes:", themes);
             if (themes.length > 0) {
-                themeSettings = { ...defaultSettings, ...themes[0].config };
+                themeSettings = { ...DEFAULT_THEME_CONFIG, ...themes[0].config };
                 themeId = themes[0].id;
             } else {
-                console.log("Creating default theme");
                 const id = await addTheme({
                     name: "default",
-                    config: defaultSettings,
+                    config: DEFAULT_THEME_CONFIG,
                 });
                 themeId = id;
             }
+            isInitialized = true;
         } catch (e) {
             console.error("Failed to load settings", e);
         }
@@ -53,16 +39,14 @@
 
     $effect(() => {
         const configSnapshot = { ...themeSettings };
-        console.log("Attempting to save theme", themeId, configSnapshot);
 
-        if (themeId) {
+        if (isInitialized && themeId) {
             updateTheme({
                 id: themeId,
                 name: "default",
                 config: configSnapshot,
             })
                 .then(() => {
-                    console.log("Theme saved, emitting change event");
                     emit("theme-changed");
                 })
                 .catch((e) => console.error("Save failed", e));
@@ -74,7 +58,7 @@
     }
 
     function resetSettings() {
-        Object.assign(themeSettings, defaultSettings);
+        Object.assign(themeSettings, DEFAULT_THEME_CONFIG);
     }
 
     const labels = {

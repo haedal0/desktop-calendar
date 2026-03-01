@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { getDb, getWindowState, saveWindowState } from '$lib/db';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { currentMonitor, availableMonitors } from '@tauri-apps/api/window';
 	import { PhysicalPosition, PhysicalSize } from '@tauri-apps/api/dpi';
 
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let unlistenMoved: (() => void) | null = null;
+	let unlistenResized: (() => void) | null = null;
+
 	onMount(async () => {
 		try {
 			await getDb();
-			console.log('Database initialized');
 		} catch (error) {
 			console.error('Failed to initialize database:', error);
 			return;
@@ -41,8 +44,6 @@
 		}
 
 		// Listen for move/resize events and save with debounce
-		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
 		async function persistState() {
 			try {
 				const win = getCurrentWindow();
@@ -67,14 +68,14 @@
 		}
 
 		const win = getCurrentWindow();
-		const unlistenMoved = await win.onMoved(debouncedSave);
-		const unlistenResized = await win.onResized(debouncedSave);
+		unlistenMoved = await win.onMoved(debouncedSave);
+		unlistenResized = await win.onResized(debouncedSave);
+	});
 
-		return () => {
-			if (debounceTimer) clearTimeout(debounceTimer);
-			unlistenMoved();
-			unlistenResized();
-		};
+	onDestroy(() => {
+		if (debounceTimer) clearTimeout(debounceTimer);
+		if (unlistenMoved) unlistenMoved();
+		if (unlistenResized) unlistenResized();
 	});
 </script>
 

@@ -1,58 +1,29 @@
-use std::sync::Mutex;
 use tauri::{
     image::Image,
-    menu::{IconMenuItem, Menu, MenuItem},
+    menu::{IconMenuItem, Menu},
     tray::TrayIconBuilder,
-    window, Listener, LogicalSize, Manager, WindowEvent,
+    LogicalSize, Manager, WindowEvent,
 };
+#[allow(unused_imports)]
 use tauri_plugin_desktop_underlay::DesktopUnderlayExt;
 
-struct AppState {
-    aspect_ratio: Mutex<f64>,
-}
-
 #[tauri::command]
-fn change_window_size(window: tauri::Window, width: f64, height: f64) {
-    window
-        .set_size(LogicalSize {
-            height: height,
-            width: width,
-        })
-        .unwrap();
-}
-
-#[tauri::command]
-fn update_window_with_ratio(
-    window: tauri::Window,
-    state: tauri::State<AppState>,
-    width: f64,
-    height: f64,
-) {
-    let mut ratio_lock = state.aspect_ratio.lock().unwrap();
-    *ratio_lock = width / height;
-
+fn update_window_with_ratio(window: tauri::Window, width: f64, height: f64) {
     let _ = window.set_size(LogicalSize { width, height });
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
-        .manage(AppState {
-            aspect_ratio: Mutex::new(880.0 / 1000.0),
-        })
         .setup(|app| {
             #[cfg(desktop)]
             {
-                use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
-
-                let _ = app.handle().plugin(tauri_plugin_autostart::init(
-                    MacosLauncher::LaunchAgent,
-                    None,
-                ));
+                use tauri_plugin_autostart::ManagerExt;
 
                 let autostart_manager = app.autolaunch();
-                let _ = autostart_manager.enable();
+                if let Err(e) = autostart_manager.enable() {
+                    eprintln!("Failed to enable autostart: {}", e);
+                }
             }
 
             if let Some(window) = app.get_webview_window("main") {
@@ -70,7 +41,9 @@ pub fn run() {
             }
 
             let icon_bytes = include_bytes!("../../static/icons/settings.png");
-            let icon = Image::from_bytes(icon_bytes).unwrap();
+            let icon = Image::from_bytes(icon_bytes).map_err(|_| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to load tray icon")
+            })?;
 
             let setting =
                 IconMenuItem::with_id(app, "setting", "설정", true, Some(icon), None::<&str>)?;
@@ -99,15 +72,11 @@ pub fn run() {
                 println!("menu item {:?} not handled", event.id);
             }
         })
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_desktop_underlay::init())
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_sql::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![
-            change_window_size,
-            update_window_with_ratio
-        ])
+        .invoke_handler(tauri::generate_handler![update_window_with_ratio])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
