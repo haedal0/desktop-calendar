@@ -17,6 +17,10 @@
 			return;
 		}
 
+		// settings 창에서는 창 상태 저장/복원을 실행하지 않음
+		const win = getCurrentWindow();
+		if (win.label !== 'main') return;
+
 		// Restore window state
 		try {
 			const saved = await getWindowState();
@@ -33,7 +37,6 @@
 					);
 				});
 
-				const win = getCurrentWindow();
 				await win.setSize(new PhysicalSize(saved.width, saved.height));
 				if (positionValid) {
 					await win.setPosition(new PhysicalPosition(saved.x, saved.y));
@@ -46,7 +49,6 @@
 		// Listen for move/resize events and save with debounce
 		async function persistState() {
 			try {
-				const win = getCurrentWindow();
 				const pos = await win.outerPosition();
 				const size = await win.outerSize();
 				const monitor = await currentMonitor();
@@ -67,7 +69,6 @@
 			debounceTimer = setTimeout(persistState, 500);
 		}
 
-		const win = getCurrentWindow();
 		unlistenMoved = await win.onMoved(debouncedSave);
 		unlistenResized = await win.onResized(debouncedSave);
 	});
