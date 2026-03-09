@@ -72,8 +72,6 @@
         "--month-change-color": "달 변경 버튼 색상",
         "--event-background-color": "일정 배경 색상 (RGBA)",
         "--event-text-color": "일정 제목 색상",
-        "--blur-background-color": "블러 배경 색상 (RGBA)",
-        "--blur": "블러 효과 (CSS)",
     };
 </script>
 
@@ -89,16 +87,7 @@
                 <label for={key}
                     >{labels[key as keyof typeof labels] || key}</label
                 >
-                {#if key === "--blur"}
-                    <input
-                        type="text"
-                        id={key}
-                        bind:value={
-                            themeSettings[key as keyof typeof themeSettings]
-                        }
-                        placeholder="e.g. blur(5px)"
-                    />
-                {:else if key === "--blur-background-color" || key === "--event-background-color"}
+                {#if key === "--event-background-color"}
                     <input
                         type="text"
                         id={key}

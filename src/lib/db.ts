@@ -19,8 +19,6 @@ export interface ThemeConfig {
   "--month-change-color": string;
   "--event-background-color": string;
   "--event-text-color": string;
-  "--blur-background-color": string;
-  "--blur": string;
 }
 
 export interface WindowState {
@@ -48,8 +46,6 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   "--month-change-color": "#000000",
   "--event-background-color": "rgba(245, 69, 66, 0.2)",
   "--event-text-color": "#000000",
-  "--blur-background-color": "rgba(255, 255, 255, 0.1)",
-  "--blur": "blur(5px)",
 };
 
 let db: Database | null = null;

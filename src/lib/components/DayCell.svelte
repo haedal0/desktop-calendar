@@ -22,7 +22,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-    class="day blur"
+    class="day"
     class:other-month-day={isOtherMonth}
     oncontextmenu={(e) => onContextMenu(e, day, type)}
 >
@@ -66,11 +66,6 @@
         border: 1px solid var(--day-border-color);
         border-radius: 20%;
         aspect-ratio: 1;
-    }
-
-    .day.blur {
-        background-color: var(--blur-background-color);
-        backdrop-filter: var(--blur);
     }
 
     .day.other-month-day {
